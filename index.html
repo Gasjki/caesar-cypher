@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cifrul lui Caesar</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body style="background-color:#e5e5e5">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-12 col-md-6 col-lg-6">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h3 class="mt-2">Criptare / Decriptate - Cifrul lui Caesar</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="text">Text</label>
+                        <input id="text" class="form-control" placeholder="ex.: AFARA E FRIG" value="AFARA E FRIG"
+                               required/>
+                        <span class="text-muted">Nota: Nu conteaza daca textul este scris cu litere mari / mici.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="dimension">D (nr. caracterelor)</label>
+                        <input type="number" min="1" id="dimension" class="form-control" placeholder="ex.: 3" required/>
+                    </div>
+                    <div class="form-group">
+                        <label for="key">K (cheia)</label>
+                        <input id="key" class="form-control" placeholder="ex.: ALX" value="ALX" required/>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Alege actiunea</label>
+                        <select id="type" class="form-control">
+                            <option value="1" selected>Cripteaza</option>
+                            <option value="0">Decripteaza</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-block btn-success" onclick="process()">
+                        Cripteaza / Decripteaza
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-12 col-md-6 col-lg-6">
+            <div class="card bg-success">
+                <div class="card-header">
+                    <h3 class="mt-2">Rezultat</h3>
+                </div>
+                <div class="card-body p-0">
+                    <textarea id="result" class="form-control" rows="11" placeholder="ex.: AQXRL B FCFQ"
+                              disabled></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+<script type="text/javascript">
+    const numberToLetter = {
+        0: 'A',
+        1: 'B',
+        2: 'C',
+        3: 'D',
+        4: 'E',
+        5: 'F',
+        6: 'G',
+        7: 'H',
+        8: 'I',
+        9: 'J',
+        10: 'K',
+        11: 'L',
+        12: 'M',
+        13: 'N',
+        14: 'O',
+        15: 'P',
+        16: 'Q',
+        17: 'R',
+        18: 'S',
+        19: 'T',
+        20: 'U',
+        21: 'V',
+        22: 'W',
+        23: 'X',
+        24: 'Y',
+        25: 'Z'
+    };
+    const letterToNumber = Object.keys(numberToLetter).reduce((obj, key) => Object.assign({}, obj, {[numberToLetter[key]]: parseInt(key)}), {});
+
+    function process() {
+        let text = $('#text').val().trim();
+        let dimension = parseInt($('#dimension').val().trim());
+        let key = $('#key').val().trim();
+        let option = $('#type option:checked').val();
+
+        if (!text.length) {
+            alert('Introdu textul ce trebuie criptat / decriptat!');
+            return;
+        }
+
+        if (isNaN(dimension) || dimension < 1) {
+            alert('Introdu dimensiunea!');
+            return;
+        }
+
+        if (!key.length) {
+            alert('Introdu cheia!');
+            return;
+        }
+
+        key = key.substr(0, dimension);
+
+        // Text is converted to numbers.
+        let dataRaw = text.split('');
+        let data = dataRaw.filter((value) => ' ' !== value);
+        let dataConvertedToNumbers = convertStringToNumbersArray(data);
+        let keysConvertedToNumbers = generateKeyNumbersArray(key, data.length);
+        let letterSum = calculateLetters(dataConvertedToNumbers, keysConvertedToNumbers, '1' === option);
+        let resultedText = '';
+        let virtualIndex = 0;
+        dataRaw.forEach((value, idx) => {
+            if (dataRaw[idx] === ' ') {
+                resultedText += " ";
+            } else {
+                resultedText += numberToLetter[letterSum[virtualIndex]];
+                virtualIndex++;
+            }
+        });
+
+        $('#result').val(resultedText);
+    }
+
+    function calculateLetters(letters, keys, cryptProcess) {
+        let data = [];
+        for (let i = 0; i < letters.length; i++) {
+            let sum;
+            if(cryptProcess) {
+                sum = letters[i] + keys[i];
+
+                if (sum > 25) {
+                    sum -= 26;
+                }
+            } else {
+                sum = letters[i] - keys[i];
+                if (sum < 0) {
+                    sum += 26;
+                }
+            }
+
+            data.push(sum);
+        }
+
+        return data;
+    }
+
+    function generateKeyNumbersArray(key, length) {
+        let data = [];
+        const amplifier = Math.ceil(length / key.length);
+        for (let i = 0; i < amplifier; i++) {
+            data = data.concat(...key);
+        }
+
+        data = data.slice(0, length);
+        return convertStringToNumbersArray(data);
+    }
+
+    function convertStringToNumbersArray(data) {
+        let dataConverted = [];
+
+        data.forEach((letter, idx) => {
+            dataConverted[idx] = letterToNumber[letter.toUpperCase()];
+        });
+
+        return dataConverted;
+    }
+
+    function convertNumberToStringsArray(data) {
+        let dataConverted = [];
+
+        data.forEach((letter, idx) => {
+            dataConverted[idx] = numberToLetter[letter];
+        });
+
+        return dataConverted;
+    }
+</script>
+</body>
+</html>
